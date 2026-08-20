@@ -12,11 +12,12 @@ const store = { get:()=>JSON.parse(localStorage.getItem('hybrid-train-data')||'{
 let data = store.get(); data.start ||= '2026-08-24'; data.logs ||= []; data.sessions ||= {}; data.custom ||= []; data.body ||= []; data.tab = 'home'; store.set(data);
 let tick, timer = {seconds:0,running:false,mode:'session'};
 let exerciseTick, exerciseTimer = {seconds:0,running:false,mode:'set',exercise:-1,rest:90};
-let toastTick, audioContext;
+let toastTick, audioContext, soundLoop;
 function toast(message){let old=$('#toast');if(old)old.remove();document.body.insertAdjacentHTML('beforeend',`<div id="toast" class="toast">${esc(message)}</div>`);clearTimeout(toastTick);toastTick=setTimeout(()=>$('#toast')?.remove(),3200)}
 function armSuccessChime(){try{audioContext ||= new (window.AudioContext||window.webkitAudioContext)();audioContext.resume()}catch{}}
 function playSuccessChime(){try{armSuccessChime();[523.25,659.25,783.99,1046.5].forEach((freq,index)=>{let osc=audioContext.createOscillator(),gain=audioContext.createGain(),at=audioContext.currentTime+index*.13;osc.type='triangle';osc.frequency.setValueAtTime(freq,at);gain.gain.setValueAtTime(.0001,at);gain.gain.exponentialRampToValueAtTime(.2,at+.018);gain.gain.exponentialRampToValueAtTime(.0001,at+.34);osc.connect(gain).connect(audioContext.destination);osc.start(at);osc.stop(at+.36)})}catch{}}
-function completeRest(){renderExerciseModal();playSuccessChime();setTimeout(()=>alert('พักครบแล้ว — ไปต่อได้!'),550)}
+function completeRest(){renderExerciseModal();clearInterval(soundLoop);playSuccessChime();soundLoop=setInterval(playSuccessChime,1300);document.body.insertAdjacentHTML('beforeend',`<div class="rest-complete" id="restComplete"><div class="rest-complete-card"><span class="label">rest complete</span><div class="complete-mark">✓</div><h2>พักครบแล้ว!</h2><p>พร้อมสำหรับเซ็ตถัดไป</p><button class="primary" onclick="dismissRestComplete()">ไปต่อ / ปิดเสียง</button></div></div>`)}
+window.dismissRestComplete=()=>{clearInterval(soundLoop);$('#restComplete')?.remove()};
 const $ = s=>document.querySelector(s); const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const today = ()=>new Date().toISOString().slice(0,10);
 function weekOf(date=today()){ const n=Math.floor((new Date(date+'T12:00')-new Date(data.start+'T12:00'))/6048e5)+1; return Math.max(1,n) }
