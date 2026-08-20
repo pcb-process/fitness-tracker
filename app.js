@@ -9,7 +9,7 @@ const DAYS = [['Mon','Upper A'],['Tue','Lower + Core'],['Wed','Recovery'],['Thu'
 const QUALITY = ['Easy 30–40 min (re-entry)','Tempo: 10–15 min WU + 20 min tempo + 10 min CD','Intervals: 5×3 min hard-controlled / 2 min jog','Easy 30 min — DELOAD','Tempo: 25 min continuous','Intervals: 6×3 min / 2 min jog','Easy 35–45 min','Easy 30 min — DELOAD','Tempo: 30 min','Intervals: 5×4 min / 2 min jog','Easy 35–45 min','Easy 30 min — DELOAD'];
 const LONG = [8,10,12,8,14,16,18,12,20,22,24,16];
 const store = { get:()=>JSON.parse(localStorage.getItem('hybrid-train-data')||'{}'), set:d=>localStorage.setItem('hybrid-train-data',JSON.stringify(d)) };
-let data = store.get(); data.start ||= '2026-08-24'; data.logs ||= []; data.sessions ||= {}; data.custom ||= []; data.body ||= []; data.tab ||= 'home'; store.set(data);
+let data = store.get(); data.start ||= '2026-08-24'; data.logs ||= []; data.sessions ||= {}; data.custom ||= []; data.body ||= []; data.tab = 'home'; store.set(data);
 let tick, timer = {seconds:0,running:false,mode:'session'};
 let exerciseTick, exerciseTimer = {seconds:0,running:false,mode:'set',exercise:-1,rest:90};
 let toastTick, audioContext;
