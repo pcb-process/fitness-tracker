@@ -1,0 +1,58 @@
+/* ── Design tokens ────────────────────────────────────────────────────────
+   The single source of truth for colour, space, radius, type and motion.
+   Screens must never write a raw hex value. See DESIGN.md.
+   ------------------------------------------------------------------------ */
+:root {
+  /* Ground */
+  --void:#04060f;
+  --deep:#070b17;
+  --panel:#0d1424;
+  --panel-2:#111a2e;
+  --line:#26325a;
+  --line-soft:#1a2340;
+
+  /* Neon accents */
+  --cyan:#6bd7ff;
+  --magenta:#ff4ecd;
+  --lime:#c7ff4a;
+  --violet:#9d6dff;
+  --amber:#ffc36b;
+
+  /* Semantic accents — screens use these, not the raw neon names */
+  --accent:var(--lime);          /* primary action, "done" */
+  --accent-2:var(--cyan);        /* secondary, informational */
+  --accent-3:var(--magenta);     /* alerts, live presence */
+  --accent-4:var(--violet);      /* deload / special weeks */
+
+  /* Text */
+  --ink:#f2f6ff;
+  --ink-dim:#c3cfe8;
+  --muted:#8b9bc4;
+  --muted-2:#61709a;
+
+  /* Glow */
+  --glow-lime:0 0 18px #c7ff4a44;
+  --glow-cyan:0 0 18px #6bd7ff44;
+  --glow-magenta:0 0 18px #ff4ecd44;
+  --glow-violet:0 0 18px #9d6dff44;
+
+  /* Radius */
+  --r-xs:6px; --r-sm:9px; --r-md:13px; --r-lg:18px; --r-xl:24px; --r-pill:99px;
+
+  /* Space scale */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px;
+
+  /* Type */
+  --font:'Inter',ui-sans-serif,system-ui,-apple-system,'Noto Sans Thai',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  --t-xs:.63rem; --t-sm:.75rem; --t-md:.87rem; --t-lg:1rem; --t-xl:1.3rem; --t-2xl:1.7rem; --t-3xl:2.4rem;
+  --track-label:.16em;
+
+  /* Motion */
+  --fast:.16s; --mid:.3s; --slow:.55s;
+  --ease:cubic-bezier(.2,.7,.3,1);
+
+  /* Layout */
+  --shell:720px;
+  --nav-h:64px;
+}

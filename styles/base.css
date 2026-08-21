@@ -1,0 +1,86 @@
+/* ── Base: reset, shell, deep-space ground, glitch primitives ───────────── */
+* { box-sizing:border-box }
+html { -webkit-text-size-adjust:100% }
+
+body {
+  margin:0; min-width:320px; overflow-x:hidden;
+  font-family:var(--font); color:var(--ink); letter-spacing:-.01em;
+  background:
+    radial-gradient(ellipse at 14% 2%, #12325c66 0, transparent 30rem),
+    radial-gradient(ellipse at 88% 30%, #4a1a6e55 0, transparent 34rem),
+    radial-gradient(ellipse at 52% 108%, #0d3a4f55 0, transparent 30rem),
+    var(--void);
+}
+
+/* Nebula wash + scanlines. The workout constellation lives on #sky (canvas). */
+body::before, body::after { content:""; position:fixed; inset:0; z-index:0; pointer-events:none }
+body::before {
+  background:
+    radial-gradient(circle at 28% 18%, #6bd7ff1f 0, transparent 22%),
+    radial-gradient(circle at 74% 66%, #9d6dff22 0, transparent 26%),
+    radial-gradient(circle at 46% 90%, #ff4ecd14 0, transparent 20%);
+  filter:blur(14px);
+  animation:nebula-shift 18s ease-in-out infinite alternate;
+}
+body::after {
+  background:repeating-linear-gradient(to bottom, #9fd9ff0d 0 1px, transparent 1px 3px);
+  opacity:.5; mix-blend-mode:overlay;
+}
+
+#sky { position:fixed; inset:0; z-index:0; pointer-events:none; display:block }
+
+#app {
+  position:relative; z-index:1;
+  max-width:var(--shell); margin:auto; min-height:100dvh;
+  padding:calc(26px + env(safe-area-inset-top)) var(--s-4) calc(112px + env(safe-area-inset-bottom));
+}
+
+button,input,select,textarea { font:inherit; font-family:var(--font) }
+button { border:0; cursor:pointer; color:inherit }
+
+/* Text elements carry no outer margin: spacing is owned by the rhythm rules
+   in components.css, so a box is always the same distance from its contents. */
+h1,h2,h3 { margin:0; letter-spacing:-.03em }
+p { margin:0 }
+
+/* ── Glitch primitive ──────────────────────────────────────────────────────
+   .glitch gives RGB-split text with an irregular, infrequent flicker so it
+   reads as a signal artefact rather than constant noise.                    */
+.glitch { position:relative; text-shadow:-1px 0 #ff4ecd88, 1px 0 #6bd7ff88 }
+.glitch::before, .glitch::after {
+  content:attr(data-text); position:absolute; inset:0; pointer-events:none;
+  clip-path:inset(100% 0 0 0);
+}
+.glitch::before { color:var(--magenta); transform:translateX(-2px); animation:glitch-a 7.3s steps(1) infinite }
+.glitch::after  { color:var(--cyan);    transform:translateX(2px);  animation:glitch-b 9.1s steps(1) infinite }
+
+@keyframes glitch-a {
+  0%,96%   { clip-path:inset(100% 0 0 0) }
+  96.5%    { clip-path:inset(12% 0 62% 0) }
+  97.2%    { clip-path:inset(58% 0 21% 0) }
+  97.9%    { clip-path:inset(30% 0 48% 0) }
+  98.4%,100%{ clip-path:inset(100% 0 0 0) }
+}
+@keyframes glitch-b {
+  0%,94%   { clip-path:inset(100% 0 0 0) }
+  94.6%    { clip-path:inset(44% 0 33% 0) }
+  95.3%    { clip-path:inset(8% 0 74% 0) }
+  96%,100% { clip-path:inset(100% 0 0 0) }
+}
+@keyframes nebula-shift { to { transform:scale(1.12) rotate(4deg); opacity:.72 } }
+@keyframes scanner      { to { transform:translateY(100%) rotate(2deg) } }
+@keyframes pulse-dot    { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.45;transform:scale(.82)} }
+@keyframes toast-in     { from{opacity:0;transform:translate(-50%,10px)} to{opacity:1;transform:translate(-50%,0)} }
+@keyframes complete-pop { from{opacity:0;transform:scale(.92)} to{opacity:1;transform:scale(1)} }
+@keyframes step-in      { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+/* Motion is decorative here — under reduced-motion everything holds still.
+   sky.js also checks this query and paints a single static frame. */
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after {
+    animation-duration:.01ms!important; animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+  .glitch::before,.glitch::after { display:none }
+  .glitch { text-shadow:none }
+}
