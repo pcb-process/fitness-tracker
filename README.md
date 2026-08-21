@@ -1,6 +1,17 @@
 # HYBRID // TRAIN
 
-เว็บแอปออกกำลังกายส่วนตัวแบบ PWA สำหรับ iPhone ใช้งานได้ฟรีบน Vercel
+เว็บแอปออกกำลังกายแบบ PWA สำหรับ iPhone ใช้งานได้ฟรีบน Vercel พร้อมรองรับ Supabase สำหรับหลายผู้ใช้และหลายโปรแกรม
+
+## เปิดใช้ Login + Database
+
+1. สร้างโปรเจกต์ฟรีใน [Supabase](https://supabase.com/dashboard)
+2. เปิด **SQL Editor** แล้วรันไฟล์ `supabase/schema.sql`
+3. จาก **Project Settings → API** คัดลอก Project URL และ Publishable key (หรือ anon key)
+4. ใส่ค่าทั้งสองใน `supabase-config.js` โดยห้ามใช้ `service_role` key
+5. ใน **Authentication → URL Configuration** เพิ่ม URL ของ Vercel เป็น Redirect URL
+6. Deploy ใหม่บน Vercel
+
+หลังเชื่อมแล้ว ผู้ใช้จะสมัคร/ล็อกอินด้วยอีเมลและรหัสผ่านได้ ข้อมูลถูกแยกด้วย Row Level Security ตามบัญชี และกดชื่อโปรแกรมด้านขวาบนเพื่อสร้างหรือสลับโปรแกรมได้
 
 ## Deploy บน Vercel
 
