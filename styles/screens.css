@@ -56,9 +56,14 @@
 .rest-picker { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:6px }
 .rest-picker button { border:1px solid var(--line); border-radius:var(--r-sm); padding:9px 2px; background:#0a1121; color:var(--ink-dim); font-size:var(--t-xs); font-weight:800; font-family:var(--mono) }
 .rest-picker button.selected { border-color:#6d8f35; background:#1b2b12; color:var(--lime); box-shadow:var(--glow-lime) }
-.sound-test { margin-top:11px; background:transparent; color:var(--cyan); font-size:var(--t-xs); text-decoration:underline; padding:2px 0; border:0 }
+.sound-test { margin-top:6px; background:transparent; color:var(--cyan); font-size:var(--t-xs); text-decoration:underline; padding:10px 2px; border:0 }
 
-.rest-complete { position:fixed; z-index:40; inset:0; display:grid; place-items:center; padding:var(--s-5); background:#02040ae0; backdrop-filter:blur(8px) }
+.rest-complete {
+  position:fixed; z-index:40; inset:0; display:grid; place-items:center;
+  background:#02040ae0; backdrop-filter:blur(8px);
+  padding:var(--s-5);
+  padding-bottom:calc(var(--s-5) + env(safe-area-inset-bottom));
+}
 .rest-complete-card {
   width:min(370px,100%); text-align:center; padding:var(--s-6) var(--s-5) var(--s-5);
   border:1px solid #6d8f35; border-radius:var(--r-xl);

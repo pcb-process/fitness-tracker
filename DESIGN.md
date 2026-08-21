@@ -159,6 +159,27 @@ scene into the dashboard card.
 
 ---
 
+## Safe areas and overlays
+
+Anything `position: fixed` that touches the bottom edge must reserve the iOS
+home-indicator inset, or its controls end up underneath it:
+
+```css
+padding-bottom: calc(<your padding> + env(safe-area-inset-bottom));
+```
+
+Currently applied to `#app`, `.nav`, `.toast`, `.modal` and `.rest-complete`.
+Add it to any new overlay.
+
+**Never use `float` for a control inside a box.** A float is out of normal flow,
+so the block after it renders *underneath* it. `.close` is absolutely positioned
+at the modal's top-right, and `.modal-box > h2` carries a `padding-right` so the
+title text can never run into it.
+
+Tap targets are at least 30px in both axes.
+
+---
+
 ## Motion and accessibility
 
 Every animation is decorative. `prefers-reduced-motion: reduce` freezes CSS
