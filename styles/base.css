@@ -38,6 +38,12 @@ body::after {
 button,input,select,textarea { font:inherit; font-family:var(--font) }
 button { border:0; cursor:pointer; color:inherit }
 
+/* Controls inherit from their <label>, which is --t-sm (12px). On iOS that
+   makes Safari zoom the whole page on focus and leaves it zoomed. Pinning every
+   control to 16px is the fix — never reach for user-scalable=no, which would
+   also take pinch-zoom away from people who need it. */
+input,select,textarea { font-size:var(--t-input) }
+
 /* Text elements carry no outer margin: spacing is owned by the rhythm rules
    in components.css, so a box is always the same distance from its contents. */
 h1,h2,h3 { margin:0; letter-spacing:-.03em }

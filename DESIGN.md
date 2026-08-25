@@ -178,6 +178,12 @@ title text can never run into it.
 
 Tap targets are at least 30px in both axes.
 
+**Form controls are pinned to `--t-input` (16px)** in `base.css` so iOS Safari
+never zooms on focus. Controls inherit from their `<label>`, which is 12px, so
+without that rule every field triggers a zoom that Safari does not undo. Set a
+control's font-size below 16px and you reintroduce the bug — and never "fix" it
+with `user-scalable=no`, which takes pinch-zoom away from people who need it.
+
 ---
 
 ## Motion and accessibility
