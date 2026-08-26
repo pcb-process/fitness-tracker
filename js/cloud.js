@@ -41,11 +41,11 @@ export async function startCloudSession(user) {
   if (!user) return;
   session.user = user;
 
-  const [{ data: programs, error }, { data: profile }] = await Promise.all([
+  const [{ data: programs, error }, { data: profile, error: profileError }] = await Promise.all([
     supabase.from('training_programs').select('*').eq('user_id', user.id).eq('archived', false).order('created_at'),
     supabase.from('training_profiles').select('*').eq('user_id', user.id).maybeSingle(),
   ]);
-  if (error) { handlers.onAuthError?.(error.message); return }
+  if (error || profileError) { handlers.onAuthError?.((error || profileError).message); return }
 
   session.programs = programs || [];
   session.profile = profile || null;
@@ -63,9 +63,10 @@ export async function startCloudSession(user) {
 }
 
 export async function loadActiveProgram() {
-  const { data: state } = await supabase
+  const { data: state, error } = await supabase
     .from('training_program_state').select('state_data')
     .eq('program_id', session.program.id).maybeSingle();
+  if (error) throw new Error(error.message);
   const saved = state?.state_data || {};
   setData({
     ...defaults(saved),
@@ -135,7 +136,9 @@ export function scheduleCloudSave() {
 export async function uploadCloudState() {
   if (!session.user || !session.program) return;
   const state = { ...data };
-  delete state.tab; delete state.active;
+  // Keep an in-progress session as well. This is what lets a workout, its
+  // stopwatch, and a rest countdown survive closing/reopening the app.
+  delete state.tab;
   const now = new Date().toISOString();
   const [a, b] = await Promise.all([
     supabase.from('training_program_state')
@@ -144,7 +147,12 @@ export async function uploadCloudState() {
       .update({ start_date: data.start, program_data: { custom: data.custom || [] }, updated_at: now })
       .eq('id', session.program.id),
   ]);
-  if (a.error || b.error) toast('ซิงก์ขึ้นคลาวด์ไม่สำเร็จ ข้อมูลยังอยู่ในเครื่องนี้');
+  if (a.error || b.error) {
+    console.error('Cloud save failed', a.error || b.error);
+    toast('บันทึกขึ้นคลาวด์ไม่สำเร็จ ข้อมูลยังอยู่ในเครื่องนี้');
+    return false;
+  }
+  return true;
 }
 
 onSave(scheduleCloudSave);

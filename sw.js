@@ -1,6 +1,6 @@
 // Network-first with a cache fallback, so a deploy is picked up immediately
 // but the app still opens offline. Bump CACHE whenever FILES changes.
-const CACHE = 'hybrid-train-v7';
+const CACHE = 'hybrid-train-v8';
 const FILES = [
   './', './index.html', './supabase-config.js', './manifest.webmanifest', './icon.svg',
   './styles/tokens.css', './styles/base.css', './styles/components.css', './styles/screens.css',

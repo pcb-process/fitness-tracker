@@ -135,6 +135,20 @@ button:disabled { opacity:.45; cursor:not-allowed }
 .nav button.active i { color:var(--lime); text-shadow:0 0 12px #c7ff4a99 }
 .nav i { display:block; font-size:1.05rem; font-style:normal; margin-bottom:3px }
 
+/* Persistent, tappable workout control shown above the navigation while a
+   session is minimized. */
+.active-session-bar {
+  position:fixed; z-index:6; left:12px; right:12px; bottom:calc(72px + env(safe-area-inset-bottom));
+  display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:10px;
+  padding:10px 12px; text-align:left; border:1px solid #4e6b26; border-radius:var(--r-md);
+  color:var(--ink); background:linear-gradient(135deg,#17250d,#101a30); box-shadow:0 10px 28px #000a,var(--glow-lime)
+}
+.active-session-bar span { min-width:0 }
+.active-session-bar b,.active-session-bar small { display:block }
+.active-session-bar small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:var(--t-xs); margin-top:2px }
+.active-session-bar strong { font-family:var(--mono); color:var(--lime) }
+.active-session-bar em { color:var(--cyan); font-size:var(--t-xs); font-style:normal; white-space:nowrap }
+
 /* Forms ----------------------------------------------------------------- */
 .form { display:grid; grid-template-columns:1fr 1fr; gap:var(--s-3); margin-top:0 }
 .form label { color:var(--muted); font-size:var(--t-sm) }

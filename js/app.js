@@ -11,7 +11,7 @@ import * as ui from './ui.js';
 import { homeScreen } from './screens/home.js';
 import { planScreen } from './screens/plan.js';
 import { logScreen } from './screens/log.js';
-import { sessionScreen } from './screens/session.js';
+import { sessionScreen, activeSessionBar } from './screens/session.js';
 import { dashboardScreen, dashboardMount } from './screens/dashboard.js';
 import { settingsScreen } from './screens/settings.js';
 import { friendsScreen, friendsMount, friendsUnmount } from './screens/friends.js';
@@ -36,7 +36,7 @@ let mounted = null;
 function render() {
   const screen = SCREENS[data.tab] || SCREENS.home;
   if (mounted && mounted !== screen) mounted.unmount?.();
-  $('#app').innerHTML = screen.view();
+  $('#app').innerHTML = screen.view() + (data.tab === 'session' ? '' : activeSessionBar());
   window.scrollTo({ top: 0 });
   mounted = screen;
   screen.mount?.();
@@ -65,6 +65,9 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 // Leaving the tab mid-session should not strand a stale "live" badge; the
 // heartbeat in social.js stops on its own, and friends age it out after 3 min.
 addEventListener('pagehide', () => save());
+// Background tabs can be suspended before pagehide. Saving when the page is
+// hidden gives the cloud sync a chance to finish while the app is still alive.
+addEventListener('visibilitychange', () => { if (document.hidden) save() });
 
 // When Supabase is not configured, bootCloud() calls onReady immediately and
 // the app runs entirely on localStorage.

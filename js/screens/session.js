@@ -9,8 +9,8 @@ import * as ui from '../ui.js';
 
 const REST_CHOICES = [45, 60, 90, 120, 180];
 
-let tick, timer = { seconds: 0, running: false };
-let exTick, ex = { seconds: 0, running: false, mode: 'set', exercise: -1, rest: 90 };
+let tick, timer = { seconds: 0, running: false, startedAt: null };
+let exTick, ex = { seconds: 0, running: false, mode: 'set', exercise: -1, rest: 90, endsAt: null, startedAt: null };
 let audioContext, soundLoop;
 
 /* ── Audio ─────────────────────────────────────────────────────────────── */
@@ -36,6 +36,16 @@ function playChime() {
 }
 
 function completeRest() {
+  ex.seconds = 0; ex.running = false; ex.endsAt = null;
+  persistRuntime();
+  // A minimized timer must not suddenly cover whichever menu the user is
+  // viewing. The compact bar will show 00:00 and can be used to return.
+  const showOverlay = data.tab === 'session' || document.getElementById('modal');
+  if (!showOverlay) {
+    playChime();
+    ui.toast('พักครบแล้ว เลือกท่าถัดไปได้เลย');
+    return;
+  }
   renderExerciseModal();
   clearInterval(soundLoop);
   playChime();
@@ -46,13 +56,14 @@ function completeRest() {
       <div class="complete-mark">✓</div>
       <h2>พักครบแล้ว!</h2>
       <p>พร้อมสำหรับเซ็ตถัดไป</p>
-      ${ui.button('ไปต่อ / ปิดเสียง', { variant: 'primary', act: 'dismissRestComplete' })}
+      ${ui.button('เลือกท่าอื่น / ปิดเสียง', { variant: 'primary', act: 'dismissRestComplete' })}
     </div></div>`);
 }
 
 /* ── Views ─────────────────────────────────────────────────────────────── */
 
 export function sessionScreen() {
+  restoreRuntime();
   const a = data.active;
   if (!a) { go('home'); return '' }
   const { s, d, it } = a;
@@ -81,6 +92,18 @@ export function sessionScreen() {
   ].join('');
 }
 
+/** A compact return control remains available while the user browses other tabs. */
+export function activeSessionBar() {
+  if (!data.active) return '';
+  restoreRuntime();
+  const rest = ex.mode === 'rest' && ex.running;
+  return `<button class="active-session-bar" ${ui.attrs({ act: 'resumeSession' })}>
+    <span><b>${rest ? 'พักอยู่' : 'กำลังฝึก'}</b><small>${esc(data.active.s)}</small></span>
+    <strong id="miniSessionTime">${fmt(currentTimerSeconds())}</strong>
+    <em>${rest ? fmt(currentRestSeconds()) : 'กลับไปที่เซสชัน →'}</em>
+  </button>`;
+}
+
 function exerciseButton([name, n, reps, rest], i, st) {
   const done = (st.sets?.[i] || []).filter(v => v.done).length;
   const cleared = done === n;
@@ -103,18 +126,19 @@ function renderExerciseModal() {
   const st = data.sessions[sessionKey(a.d, a.s)] || { sets: {} };
   const vals = st.sets?.[i] || [];
   let j = 0; while (j < n && vals[j]?.done) j++;
-  if (j === n) j = n - 1;
+  const allDone = j === n;
+  if (allDone) j = n - 1;
   const current = vals[j] || {};
   const chosen = ex.rest || 90;
   const resting = ex.mode === 'rest';
 
   ui.modal(`<div class="game-modal">
     ${ui.row(`<div>${ui.label(`exercise ${String(i + 1).padStart(2, '0')} · set ${j + 1}/${n}`)}<h2>${esc(name)}</h2></div>`,
-      ui.button('×', { variant: 'icon', act: 'closeExercise' }))}
+      ui.button('พับ', { variant: 'icon', act: 'minimizeExercise' }))}
     <p class="target">TARGET: ${esc(reps)} <span>•</span> REST: ${esc(rest)}</p>
     <div class="set-clock ${resting ? 'resting' : ''}">
       ${ui.label(resting ? 'พักฟื้น' : 'จับเวลาเซ็ต')}
-      <div class="time" id="exerciseTime">${fmt(ex.seconds)}</div>
+      <div class="time" id="exerciseTime">${fmt(resting ? currentRestSeconds() : currentSetSeconds())}</div>
       <div class="small">${resting ? 'หายใจให้พร้อม แล้วไปต่อ' : 'กดเริ่มเมื่อเริ่มทำเซ็ต'}</div>
     </div>
     <div class="timer-actions">
@@ -131,8 +155,8 @@ function renderExerciseModal() {
         <button type="button" class="sound-test" ${ui.attrs({ act: 'soundTest' })}>🔊 ทดสอบเสียง</button>
       </label>
     </div>
-    ${resting
-      ? ui.button(`ไปเซ็ต ${Math.min(j + 1, n)} →`, { variant: 'primary', full: true, act: 'skipRest' })
+    ${allDone || resting
+      ? ui.button(allDone ? 'เลือกท่าอื่น →' : `ไปเซ็ต ${j + 1} →`, { variant: 'primary', full: true, act: allDone ? 'finishExercise' : 'skipRest' })
       : ui.button(`จบเซ็ต ${j + 1} + เริ่มพัก`, { variant: 'primary', full: true, extraClass: 'finish-set', act: 'finishExerciseSet', data: { i, j } })}
     <div class="set-dots">${Array.from({ length: n }, (_, k) =>
       `<i class="${vals[k]?.done ? 'done' : k === j ? 'active' : ''}">${k + 1}</i>`).join('')}</div>
@@ -144,6 +168,8 @@ function renderExerciseModal() {
 function openSession(s, d, items) {
   const it = items || PROGRAM[s] || [];
   data.active = { s, d, it };
+  timer = { seconds: 0, running: false, startedAt: null };
+  ex = { seconds: 0, running: false, mode: 'set', exercise: -1, rest: 90, endsAt: null, startedAt: null };
   save();
   publishActivity({ status: 'in_session', session_name: s, exercise_name: null, set_index: null, set_total: null });
   go('session');
@@ -151,13 +177,49 @@ function openSession(s, d, items) {
 
 function stopRestSound() { clearInterval(soundLoop); document.getElementById('restComplete')?.remove() }
 
+function currentTimerSeconds() {
+  return timer.running && timer.startedAt
+    ? timer.seconds + Math.floor((Date.now() - timer.startedAt) / 1000)
+    : timer.seconds;
+}
+function currentRestSeconds() { return ex.endsAt ? Math.max(0, Math.ceil((ex.endsAt - Date.now()) / 1000)) : ex.seconds; }
+function currentSetSeconds() {
+  return ex.running && ex.startedAt
+    ? ex.seconds + Math.floor((Date.now() - ex.startedAt) / 1000)
+    : ex.seconds;
+}
+function persistRuntime() {
+  if (!data.active) return;
+  data.active.runtime = { timer, ex };
+  save();
+}
+function restoreRuntime() {
+  const runtime = data.active?.runtime;
+  if (!runtime) return;
+  timer = { ...timer, ...(runtime.timer || {}) };
+  ex = { ...ex, ...(runtime.ex || {}) };
+  if (timer.running) startTotalTimer();
+  if (ex.running && ex.mode === 'rest') startRestCountdown();
+}
+function updateTimerDisplays() {
+  const seconds = currentTimerSeconds();
+  const text = fmt(seconds);
+  const main = $('#time'); if (main) main.textContent = text;
+  const mini = $('#miniSessionTime'); if (mini) mini.textContent = text;
+}
+function startTotalTimer() {
+  clearInterval(tick);
+  tick = setInterval(updateTimerDisplays, 1000);
+  updateTimerDisplays();
+}
+
 function startRestCountdown() {
   clearInterval(exTick);
   exTick = setInterval(() => {
-    ex.seconds--;
+    ex.seconds = currentRestSeconds();
     const el = $('#exerciseTime');
     if (el) el.textContent = fmt(Math.max(ex.seconds, 0));
-    if (ex.seconds <= 0) { ex.seconds = 0; ex.running = false; clearInterval(exTick); completeRest() }
+    if (ex.seconds <= 0) { ex.seconds = 0; ex.running = false; ex.endsAt = null; clearInterval(exTick); completeRest() }
   }, 1000);
 }
 
@@ -170,37 +232,46 @@ register({
   },
 
   toggleTimer: () => {
-    timer.running = !timer.running;
-    clearInterval(tick);
-    if (timer.running) tick = setInterval(() => {
-      timer.seconds++;
-      const el = $('#time'); if (el) el.textContent = fmt(timer.seconds);
-    }, 1000);
+    if (timer.running) { timer.seconds = currentTimerSeconds(); timer.running = false; timer.startedAt = null; clearInterval(tick) }
+    else { timer.running = true; timer.startedAt = Date.now(); startTotalTimer() }
+    persistRuntime();
     renderSession();
   },
 
   openExercise: ({ i }) => {
     clearInterval(exTick);
     const idx = Number(i);
-    ex = { seconds: 0, running: false, mode: 'set', exercise: idx, rest: 90 };
+    ex = { seconds: 0, running: false, mode: 'set', exercise: idx, rest: 90, endsAt: null, startedAt: null };
     publishActivity({ status: 'in_session', session_name: data.active?.s, exercise_name: data.active?.it[idx]?.[0], set_index: null, set_total: data.active?.it[idx]?.[1] ?? null });
     renderExerciseModal();
   },
   closeExercise: () => { clearInterval(exTick); ui.closeModal(); renderSession() },
+  minimizeExercise: () => { ui.closeModal(); persistRuntime(); },
+  resumeSession: () => { go('session') },
 
   toggleExerciseTimer: () => {
-    ex.running = !ex.running;
+    const wasRunning = ex.running;
+    if (wasRunning && ex.mode === 'rest') {
+      ex.seconds = currentRestSeconds();
+      ex.endsAt = null;
+    }
+    if (wasRunning && ex.mode === 'set') {
+      ex.seconds = currentSetSeconds();
+      ex.startedAt = null;
+    }
+    ex.running = !wasRunning;
     clearInterval(exTick);
     if (ex.running) {
-      if (ex.mode === 'rest') startRestCountdown();
+      if (ex.mode === 'rest') { ex.endsAt = Date.now() + ex.seconds * 1000; startRestCountdown() }
       else exTick = setInterval(() => {
-        ex.seconds++;
-        const el = $('#exerciseTime'); if (el) el.textContent = fmt(ex.seconds);
+        const el = $('#exerciseTime'); if (el) el.textContent = fmt(currentSetSeconds());
       }, 1000);
+      if (ex.mode === 'set') ex.startedAt = Date.now();
     }
+    persistRuntime();
     renderExerciseModal();
   },
-  resetExerciseTimer: () => { ex.seconds = 0; ex.running = false; clearInterval(exTick); renderExerciseModal() },
+  resetExerciseTimer: () => { ex.seconds = 0; ex.running = false; ex.endsAt = null; ex.startedAt = null; clearInterval(exTick); persistRuntime(); renderExerciseModal() },
   pickRest: ({ rest }) => {
     ex.rest = Number(rest);
     $('#modalRest').value = ex.rest;
@@ -217,21 +288,24 @@ register({
     const a = data.active, key = sessionKey(a.d, a.s);
     const st = data.sessions[key] || { sets: {} };
     st.sets[Number(i)] ||= [];
-    st.sets[Number(i)][Number(j)] = { reps, load, done: true, duration: ex.seconds };
+    st.sets[Number(i)][Number(j)] = { reps, load, done: true, duration: currentSetSeconds() };
     data.sessions[key] = st;
     save();
-    ex = { seconds: rest, running: true, mode: 'rest', exercise: Number(i), rest };
+    ex = { seconds: rest, running: true, mode: 'rest', exercise: Number(i), rest, endsAt: Date.now() + rest * 1000, startedAt: null };
     publishActivity({ status: 'resting', session_name: a.s, exercise_name: a.it[Number(i)]?.[0], set_index: Number(j) + 1, set_total: a.it[Number(i)]?.[1] ?? null });
     startRestCountdown();
+    persistRuntime();
     renderExerciseModal();
   },
   skipRest: () => {
     clearInterval(exTick);
-    ex = { seconds: 0, running: false, mode: 'set', exercise: ex.exercise, rest: ex.rest || 90 };
+    ex = { seconds: 0, running: false, mode: 'set', exercise: ex.exercise, rest: ex.rest || 90, endsAt: null, startedAt: null };
+    persistRuntime();
     publishActivity({ status: 'in_session' });
     renderExerciseModal();
   },
-  dismissRestComplete: stopRestSound,
+  dismissRestComplete: () => { stopRestSound(); ui.closeModal(); renderSession() },
+  finishExercise: () => { clearInterval(exTick); ex = { seconds: 0, running: false, mode: 'set', exercise: -1, rest: 90, endsAt: null, startedAt: null }; stopRestSound(); ui.closeModal(); persistRuntime(); renderSession() },
 
   finishSession: () => {
     const a = data.active;
@@ -252,4 +326,3 @@ register({
     go('log');
   },
 });
-
